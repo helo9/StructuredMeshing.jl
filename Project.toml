@@ -1,0 +1,5 @@
+authors = ["Jonathan H"]
+name = "StructuredMeshing"
+uuid = "f65217f6-3a6f-11e9-30a3-3bd364deaf89"
+version = "0.1.0"
+
