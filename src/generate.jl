@@ -28,11 +28,11 @@ function appendBoundaryNodes!(mesh::Mesh, boundary::Boundary, vertices, skipFirs
         nodes = [coords1 + Δcoords * i/(N-1) for i in is]
     else
         α = abs(boundary.bias)
-        N = boundary.node_num-1
+        N_ = N-1
         Δcoords *= sign(boundary.bias)
         
         startcoord = boundary.bias>0 ? coords1 : coords2
-        nodes = [startcoord + Δcoords * (α.^i-1)/(α^N-1) for i in is]
+        nodes = [startcoord + Δcoords * (α.^i-1)/(α^N_-1) for i in is]
 
     end
     

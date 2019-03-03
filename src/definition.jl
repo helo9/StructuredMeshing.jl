@@ -36,6 +36,15 @@ struct BoundaryLink
     vert_end :: Int64
 end
 
+struct BlockLink
+    id :: Int64
+    frontbound :: BoundaryLink
+    leftbound :: BoundaryLink
+    rightbound :: BoundaryLink
+    vert_left :: Int64
+    vert_right :: Int64
+end
+
 function extrude(meshdef::MeshDef, vert_start::Int64, direction::Vector{Float64}, length::Float64, node_num::Int64, bias::Float64=0.0)
     dir_norm = direction/norm(direction)
     
@@ -63,7 +72,7 @@ function connect(meshdef::MeshDef, vert_start::Int64, vert_end::Int64, node_num:
 end
 
 function extrude(meshdef::MeshDef, boundlink::BoundaryLink, direction::Vector{Float64}, length::Float64, node_num::Int64, bias::Float64=0.0;
-        blocktype::Symbol=:transfinite)
+        blocktype::Symbol=:transfinite, parallel_node_num::Int64=0)
     
     bounds = Vector{Int64}()
     
@@ -73,7 +82,12 @@ function extrude(meshdef::MeshDef, boundlink::BoundaryLink, direction::Vector{Fl
     
     startbound = meshdef.bounds[boundlink.id]
     
-    boundlink3 = connect(meshdef, boundlink2.vert_end, boundlink1.vert_end, startbound.node_num, -startbound.bias)
+    # parallel_node_num is for transition mesh
+    if parallel_node_num == 0
+        parallel_node_num = startbound.node_num
+    end
+    
+    boundlink3 = connect(meshdef, boundlink2.vert_end, boundlink1.vert_end, parallel_node_num, -startbound.bias)        
     
     bounds = [boundlink.id, boundlink1.id, boundlink3.id, -boundlink2.id]
     
@@ -81,7 +95,10 @@ function extrude(meshdef::MeshDef, boundlink::BoundaryLink, direction::Vector{Fl
     
     push!(meshdef.blocks, blockdef)
     
-    # TODO return BlockLink
+    block_id = size(meshdef.blocks, 1)
+    
+    BlockLink(block_id, boundlink3, boundlink1, boundlink2, 
+        boundlink1.vert_start, boundlink1.vert_end)
 end
 
 function extrude(meshdef::MeshDef, boundlink::BoundaryLink, integrate::Vector{BoundaryLink})
@@ -122,11 +139,16 @@ function transitionextrude(meshdef::MeshDef, boundlink::BoundaryLink, direction:
         vec *= -1
     end
     
-    # do extrusion
-    extrude(meshdef, boundlink, vec, distance, layers+1, 0.5, blocktype=:transition)
+    # reduced mesh density on created parallel boundary
+    N = convert(Int64, floor((bound_start.node_num-1) / 2^layers))+1
     
-    # TODO: reduce mesh density on parallel boundary
-    # TODO: fix bias
+    println("N: ",N)
+    
+    # do extrusion
+    blocklink = extrude(meshdef, boundlink, vec, distance, layers+1, 0.5, blocktype=:transition,
+                        parallel_node_num = N)
+    
+    return blocklink    
 end
 
 
