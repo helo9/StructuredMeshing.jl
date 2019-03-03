@@ -44,7 +44,7 @@ function extrude(meshdef::MeshDef, vert_start::Int64, direction::Vector{Float64}
     
     vert_end = addVertice(meshdef, coords_new)
     
-    bound_tmp = Boundary(:straight, vert_start, vert_end, node_num, bias)
+    bound_tmp = Boundary(:straight, vert_start, vert_end, node_num, -bias)
     
     push!(meshdef.bounds, bound_tmp)
     
@@ -107,6 +107,7 @@ function transitionextrude(meshdef::MeshDef, boundlink::BoundaryLink, direction:
     Δl = norm(coords2-coords1)/(bound_start.node_num-1)
     
     # calculate extrusion length (geometric series)
+    #n = layers-1
     distance = 2 * Δl * (2^layers - 1)
     
     # calculate direction normal to start boundary
@@ -114,12 +115,15 @@ function transitionextrude(meshdef::MeshDef, boundlink::BoundaryLink, direction:
     
     vec = [-normalvec[2], normalvec[1]]
     
-    if abs(angle(vec, direction)) > pi
+    println(vec)
+    println(direction)
+    println("jo ", abs(angle(vec, direction)))
+    if abs(angle(vec, direction)) >= pi/2
         vec *= -1
     end
     
     # do extrusion
-    extrude(meshdef, boundlink, vec, distance, layers, -0.5, blocktype=:transition)
+    extrude(meshdef, boundlink, vec, distance, layers+1, 0.5, blocktype=:transition)
     
     # TODO: reduce mesh density on parallel boundary
     # TODO: fix bias

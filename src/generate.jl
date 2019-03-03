@@ -7,6 +7,44 @@ function emptyMesh()
     Mesh(Vector{Float64}[], Vector{Int64}[])
 end
 
+function appendBoundaryNodes!(mesh::Mesh, boundary::Boundary, vertices, skipFirst::Bool, skipLast::Bool)
+    if boundary.boundtype != :straight
+        throw(DomainError())
+    end
+    
+    
+    # get coordinates of start and end point
+    coords1 = vertices[boundary.vertice_start]
+    coords2 = vertices[boundary.vertice_end]
+
+    # Stretching functions
+    Δcoords = (coords2-coords1)
+    N = boundary.node_num
+    is = collect(range(0, stop=N-1, step=1))
+    
+    if abs(boundary.bias) == 1.0
+        N = boundary.node_num
+        Δcoords = coords2-coords1
+        nodes = [coords1 + Δcoords * i/(N-1) for i in is]
+    else
+        α = abs(boundary.bias)
+        N = boundary.node_num-1
+        Δcoords *= sign(boundary.bias)
+        
+        startcoord = boundary.bias>0 ? coords1 : coords2
+        nodes = [startcoord + Δcoords * (α.^i-1)/(α^N-1) for i in is]
+
+    end
+    
+    #
+    id1 = skipFirst ? 2 : 1
+    id2 = skipLast ? 1 : 0
+    
+    nodeids = appendNodes!(mesh, nodes[id1:end-id2])
+    
+    return nodeids
+end
+
 function generateBoundaryMesh!(mesh::Mesh, meshdefinition::MeshDef)
     # create Dict for Node mapping, mapping of node_ids to boundary respectiveley vertice ids
     nodeMapping = Dict(:vertice => Dict{Int64, Int64}(), :boundary => Dict{Int64, Vector{Int64}}())
@@ -170,36 +208,3 @@ function appendElement!(mesh::Mesh, node_ids)
     push!(mesh.elements, node_ids)
 end
                 
-function appendBoundaryNodes!(mesh::Mesh, boundary::Boundary, vertices, skipFirst::Bool, skipLast::Bool)
-    if boundary.boundtype != :straight
-        throw(DomainError())
-    end
-    
-    # get coordinates of start and end point
-    coords1 = vertices[boundary.vertice_start]
-    coords2 = vertices[boundary.vertice_end]
-
-    # Stretching functions
-    α = boundary.bias
-    N = boundary.node_num
-    is = collect(range(0, stop=N, step=1))
-    
-    if abs(α) == 1.0
-        Δcoords = coords2-coords1
-        nodes = [coords1 + Δcoords * i/N for i in is]
-    elseif α > 0
-        Δcoords = coords2-coords1
-        nodes = [coords1 + Δcoords * (α.^i-1)/(α^N-1) for i in is]
-    elseif α < 0
-        Δcoords = coords1-coords2
-        nodes = [coords2 + Δcoords * ((-α).^i-1)/(α^N-1) for i in is][end:-1:1]
-    end
-    
-    #
-    id1 = skipFirst ? 2 : 1
-    id2 = skipLast ? 1 : 0
-    
-    nodeids = appendNodes!(mesh, nodes[id1:end-id2])
-    
-    return nodeids
-end
