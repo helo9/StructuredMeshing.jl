@@ -7,11 +7,10 @@ function emptyMesh()
     Mesh(Vector{Float64}[], Vector{Int64}[])
 end
 
-function appendBoundaryNodes!(mesh::Mesh, boundary::Boundary, vertices, skipFirst::Bool, skipLast::Bool)
+function meshBoundary!(mesh::Mesh, boundary::Boundary, vertices, skipFirst::Bool, skipLast::Bool)
     if boundary.boundtype != :straight
         throw(DomainError())
     end
-    
     
     # get coordinates of start and end point
     coords1 = vertices[boundary.vertice_start]
@@ -30,12 +29,15 @@ function appendBoundaryNodes!(mesh::Mesh, boundary::Boundary, vertices, skipFirs
         α = abs(boundary.bias)
         N_ = N-1
         Δcoords *= sign(boundary.bias)
-        
+            
         startcoord = boundary.bias>0 ? coords1 : coords2
         nodes = [startcoord + Δcoords * (α.^i-1)/(α^N_-1) for i in is]
-
+        
+        if boundary.bias < 0
+            nodes = nodes[end:-1:1]
+        end
     end
-    
+        
     #
     id1 = skipFirst ? 2 : 1
     id2 = skipLast ? 1 : 0
@@ -45,7 +47,7 @@ function appendBoundaryNodes!(mesh::Mesh, boundary::Boundary, vertices, skipFirs
     return nodeids
 end
 
-function generateBoundaryMesh!(mesh::Mesh, meshdefinition::MeshDef)
+function meshBoundaries!(mesh::Mesh, meshdefinition::MeshDef)
     # create Dict for Node mapping, mapping of node_ids to boundary respectiveley vertice ids
     nodeMapping = Dict(:vertice => Dict{Int64, Int64}(), :boundary => Dict{Int64, Vector{Int64}}())
     
@@ -63,7 +65,7 @@ function generateBoundaryMesh!(mesh::Mesh, meshdefinition::MeshDef)
         end
         
         # create Boundary Notes and append them to mesh
-        node_ids = appendBoundaryNodes!(mesh, boundary, meshdefinition.vertices, skipFirst, skipLast)
+        node_ids = meshBoundary!(mesh, boundary, meshdefinition.vertices, skipFirst, skipLast)
         
         nodeMapping[:boundary][boundary_id] = node_ids
         
@@ -83,7 +85,7 @@ function generateBoundaryMesh!(mesh::Mesh, meshdefinition::MeshDef)
     return nodeMapping
 end
 
-function generateMesh(meshdefinition::MeshDef)
+function mesh(meshdefinition::MeshDef)
     
     # disable garbage collection during mesh creation
     GC.enable(false)
@@ -91,20 +93,20 @@ function generateMesh(meshdefinition::MeshDef)
     # create an empty Mesh object
     mesh = emptyMesh()
     
-    
-    nodeMapping = generateBoundaryMesh!(mesh, meshdefinition)
-    
+    # generate nodes on boundaries
+    nodeMapping = meshBoundaries!(mesh, meshdefinition)
     
     # generate blocks
     for (block_id, block) in enumerate(meshdefinition.blocks)
                 
-        block_bounds = [meshdef.bounds[abs(i)] for i in block[:bounds]]
+        block_bounds = [meshdefinition.bounds[abs(i)] for i in block[:bounds]]
                 
-        addBlock!(mesh, block, block_bounds, nodeMapping)
+        generateBlock!(mesh, block, block_bounds, nodeMapping)
     end
     
+    # enable garbage collection again
     GC.enable(true)
-            
+    
     return mesh
 end
 
@@ -115,6 +117,7 @@ end
 function getBoundaryNodeIds(bound_id, nodeMapping)
     boundarynodes = nodeMapping[:boundary][abs(bound_id)]
     
+    # sign is used as direction
     if bound_id > 0
         return boundarynodes
     else
@@ -122,10 +125,16 @@ function getBoundaryNodeIds(bound_id, nodeMapping)
     end
 end
 
-function addBlock!(mesh::Mesh, block, bounds, nodeMapping)
-    if !(block[:type] == :cartesian)
-        throw(DomainError())
+function generateBlock!(mesh::Mesh, block, bounds, nodeMapping)
+    if block[:type] == :transfinite
+        generateTransfiniteBlock!(mesh, block, bounds, nodeMapping)
+    elseif block[:type] == :transition
+        generateTransitionBlock!(mesh, block, bounds, nodeMapping)
     end
+                    
+end
+                
+function generateTransfiniteBlock!(mesh::Mesh, block, bounds, nodeMapping)
     
     # extract blocks boundaries
     boundary_ids = block[:bounds]
@@ -179,6 +188,10 @@ function addBlock!(mesh::Mesh, block, bounds, nodeMapping)
     end
 end
 
+function generateTransitionBlock!(mesh::Mesh, block, bounds, nodeMapping)
+    println("Does nothing at all!")
+end
+                        
 function translateNodes!(mesh::Mesh, node_ids::Vector{Int64}, translation::Vector{Float64}; copynodes::Bool=true)
     if !copynodes
         throw(DomainError())

@@ -8,6 +8,7 @@ function show!(p::Plots.Plot, boundary::Boundary, meshdef::MeshDef)
     plot!(p, [coords[1][1], coords[2][1]], [coords[1][2], coords[2][2]], linecolor="blue")
 end
 
+
 function show!(p::Plots.Plot, vertice::Vector{Float64})
     scatter!(p, [vertice[1]], [vertice[2]], marker=(:circle, :red, 6))
 end
@@ -19,7 +20,7 @@ function show!(p::Plots.Plot, mesh::Mesh)
     end
 end
 
-function show(meshdef::MeshDef)
+function show(meshdef::MeshDef; hideVertices::Bool=false)
     p = plot(legend=false)
     
     for boundary in meshdef.bounds
@@ -27,12 +28,22 @@ function show(meshdef::MeshDef)
     end
     
     mesh = emptyMesh()
-    generateBoundaryMesh!(mesh, meshdef)
+    meshBoundaries!(mesh, meshdef)
     show!(p, mesh)
     
-    for vertice in meshdef.vertices
-        show!(p, vertice)
+    if !hideVertices
+        for vertice in meshdef.vertices
+            show!(p, vertice)
+        end
     end
+    
+    p
+end
+
+function show(mesh::Mesh)
+    p = plot(legend=false)
+    
+    show!(p, mesh)
     
     p
 end
