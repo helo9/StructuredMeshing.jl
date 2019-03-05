@@ -67,18 +67,22 @@ function meshBoundaries!(mesh::Mesh, meshdefinition::MeshDef)
         # create Boundary Notes and append them to mesh
         node_ids = meshBoundary!(mesh, boundary, meshdefinition.vertices, skipFirst, skipLast)
         
-        nodeMapping[:boundary][boundary_id] = node_ids
+        if sign(boundary_id) == -1
+            node_ids = nodes_ids[end:-1:1]
+        end
+        
+        nodeMapping[:boundary][abs(boundary_id)] = node_ids
         
         # add created nodes to nodeMapping
         if !skipFirst
             nodeMapping[:vertice][boundary.vertice_start] = node_ids[1]
         else
-            insert!(nodeMapping[:boundary][boundary_id], 1, nodeMapping[:vertice][boundary.vertice_start])
+            insert!(nodeMapping[:boundary][abs(boundary_id)], 1, nodeMapping[:vertice][boundary.vertice_start])
         end
         if !skipLast
             nodeMapping[:vertice][boundary.vertice_end] = node_ids[end]
         else
-            push!(nodeMapping[:boundary][boundary_id], nodeMapping[:vertice][boundary.vertice_end])
+            push!(nodeMapping[:boundary][abs(boundary_id)], nodeMapping[:vertice][boundary.vertice_end])
         end
     end
             
@@ -97,11 +101,8 @@ function mesh(meshdefinition::MeshDef)
     nodeMapping = meshBoundaries!(mesh, meshdefinition)
     
     # generate blocks
-    for (block_id, block) in enumerate(meshdefinition.blocks)
-                
-        block_bounds = [meshdefinition.bounds[abs(i)] for i in block[:bounds]]
-                
-        generateBlock!(mesh, block, block_bounds, nodeMapping)
+    for (block_id, block) in enumerate(meshdefinition.blocks)                
+        meshBlock!(mesh, block, meshdefinition.bounds, nodeMapping)
     end
     
     # enable garbage collection again
@@ -125,20 +126,23 @@ function getBoundaryNodeIds(bound_id, nodeMapping)
     end
 end
 
-function generateBlock!(mesh::Mesh, block, bounds, nodeMapping)
+function meshBlock!(mesh::Mesh, block, bounds, nodeMapping)
     if block[:type] == :transfinite
-        generateTransfiniteBlock!(mesh, block, bounds, nodeMapping)
+        meshTransfiniteBlock!(mesh, block, bounds, nodeMapping)
     elseif block[:type] == :transition
-        generateTransitionBlock!(mesh, block, bounds, nodeMapping)
+        meshTransitionBlock!(mesh, block, bounds, nodeMapping)
+    else
+        blocktype_str = string(block[:type])
+        throw(UndefVarError("Not defined blocktype ($blocktype_str)"))
     end
                     
 end
                 
-function generateTransfiniteBlock!(mesh::Mesh, block, bounds, nodeMapping)
+function meshTransfiniteBlock!(mesh::Mesh, block, bounds, nodeMapping)
     
     # extract blocks boundaries
     boundary_ids = block[:bounds]
-    boundaries = bounds[boundary_ids]
+    boundaries = bounds[abs.(boundary_ids)]
     
     # number of nodes in directions 1 (bound1, -bound3)
     #   and 2 (bound2, -bound4)
@@ -151,7 +155,7 @@ function generateTransfiniteBlock!(mesh::Mesh, block, bounds, nodeMapping)
     
     # coords of second bound
     coords = mesh.nodes[getBoundaryNodeIds(boundary_ids[2], nodeMapping)]
-    
+                 
     # iterate over second dimension of block
     for i in 2:n2
         
@@ -170,7 +174,7 @@ function generateTransfiniteBlock!(mesh::Mesh, block, bounds, nodeMapping)
                         new_node_ids..., 
                         getBoundaryNodeIds(boundary_ids[2], nodeMapping)[i]] 
         else
-            node_ids = nodeMapping[:boundary][boundary_ids[3]][end:-1:1]
+            node_ids = getBoundaryNodeIds(boundary_ids[3], nodeMapping)[end:-1:1]
         end
             
         for j in 2:n1
@@ -188,7 +192,7 @@ function generateTransfiniteBlock!(mesh::Mesh, block, bounds, nodeMapping)
     end
 end
 
-function generateTransitionBlock!(mesh::Mesh, block, bounds, nodeMapping)
+function meshTransitionBlock!(mesh::Mesh, block, bounds, nodeMapping)
     println("Does nothing at all!")
 end
                         

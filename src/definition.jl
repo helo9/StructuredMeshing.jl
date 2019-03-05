@@ -45,7 +45,7 @@ struct BlockLink
     vert_right :: Int64
 end
 
-function extrude(meshdef::MeshDef, vert_start::Int64, direction::Vector{Float64}, length::Float64, node_num::Int64, bias::Float64=0.0)
+function extrude(meshdef::MeshDef, vert_start::Int64, direction::Vector{Float64}, length::Float64, node_num::Int64, bias::Float64=1.0)
     dir_norm = direction/norm(direction)
     
     coords_start = meshdef.vertices[vert_start]
@@ -62,7 +62,7 @@ function extrude(meshdef::MeshDef, vert_start::Int64, direction::Vector{Float64}
     return BoundaryLink(bound_id, vert_start, vert_end)
 end
 
-function connect(meshdef::MeshDef, vert_start::Int64, vert_end::Int64, node_num::Int64, bias::Float64=0.0)
+function connect(meshdef::MeshDef, vert_start::Int64, vert_end::Int64, node_num::Int64, bias::Float64=1.0)
     
     push!(meshdef.bounds, Boundary(:straight, vert_start, vert_end, node_num, bias))
     
@@ -71,7 +71,7 @@ function connect(meshdef::MeshDef, vert_start::Int64, vert_end::Int64, node_num:
     return BoundaryLink(bound_id, vert_start, vert_end)
 end
 
-function extrude(meshdef::MeshDef, boundlink::BoundaryLink, direction::Vector{Float64}, length::Float64, node_num::Int64, bias::Float64=0.0;
+function extrude(meshdef::MeshDef, boundlink::BoundaryLink, direction::Vector{Float64}, length::Float64, node_num::Int64, bias::Float64=1.0;
         blocktype::Symbol=:transfinite, parallel_node_num::Int64=0)
     
     bounds = Vector{Int64}()
@@ -89,7 +89,7 @@ function extrude(meshdef::MeshDef, boundlink::BoundaryLink, direction::Vector{Fl
     
     boundlink3 = connect(meshdef, boundlink2.vert_end, boundlink1.vert_end, parallel_node_num, -startbound.bias)        
     
-    bounds = [boundlink.id, boundlink1.id, boundlink3.id, -boundlink2.id]
+    bounds = [boundlink.id, boundlink2.id, boundlink3.id, -boundlink1.id]
     
     blockdef = Dict(:type=>blocktype, :bounds=>bounds)
     
@@ -132,17 +132,12 @@ function transitionextrude(meshdef::MeshDef, boundlink::BoundaryLink, direction:
     
     vec = [-normalvec[2], normalvec[1]]
     
-    println(vec)
-    println(direction)
-    println("jo ", abs(angle(vec, direction)))
     if abs(angle(vec, direction)) >= pi/2
         vec *= -1
     end
     
     # reduced mesh density on created parallel boundary
     N = convert(Int64, floor((bound_start.node_num-1) / 2^layers))+1
-    
-    println("N: ",N)
     
     # do extrusion
     blocklink = extrude(meshdef, boundlink, vec, distance, layers+1, 0.5, blocktype=:transition,
