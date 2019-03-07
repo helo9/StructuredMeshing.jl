@@ -143,7 +143,7 @@ function meshTransfiniteBlock!(mesh::Mesh, block, bounds, nodeMapping)
     # extract blocks boundaries
     boundary_ids = block[:bounds]
     boundaries = bounds[abs.(boundary_ids)]
-    
+        
     # number of nodes in directions 1 (bound1, -bound3)
     #   and 2 (bound2, -bound4)
     n1 = boundaries[1].node_num
@@ -191,7 +191,7 @@ function meshTransfiniteBlock!(mesh::Mesh, block, bounds, nodeMapping)
         end
     end
 end
-
+                
 function meshTransitionBlock!(mesh::Mesh, block, bounds, nodeMapping)
     println("Does nothing at all!")
 end
