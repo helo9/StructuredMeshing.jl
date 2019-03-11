@@ -191,7 +191,30 @@ function meshTransfiniteBlock!(mesh::Mesh, block, bounds, nodeMapping)
         end
     end
 end
-                
+
+function meshTransfiniteBlock2!(mesh::Mesh, block, bounds, nodeMapping)
+    
+    # extract blocks boundaries
+    boundary_ids = block[:bounds]
+    boundaries = bounds[abs.(boundary_ids)]
+
+    # extract vertice coordinates
+    firstvert(boundary_id) = boundary_id>0 ? bounds[boundary_id].vertice_start : bounds[-boundary_id].vertice_end
+    vertice_ids = [firstvert(boundary_id) for boundary_id in boundary_ids]
+    vertices = Dict(id=>mesh.nodes[nodeMapping[:vertice][id]] for id in vertice_ids)
+
+    # define corner points
+    P12, P14, P34, P32 = vertices[vertice_ids]
+    
+    # extract edge definitions
+    lincefunc(p1, p2) = (u) -> p1 .+ (p2.-p1) .* u
+    c1 = linefunc(P12, P14)
+    c2 = linefunc(P32, P12)
+    c3 = linefunc(P32, P34)
+    c4 = linefunc(P14, P34)
+    
+end
+                            
 function meshTransitionBlock!(mesh::Mesh, block, bounds, nodeMapping)
     println("Does nothing at all!")
 end
