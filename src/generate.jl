@@ -7,13 +7,20 @@ function emptyMesh()
     Mesh(Vector{Float64}[], Vector{Int64}[])
 end
 
-function getBiased(boundary::Boundary)
+function getFac(boundary::Boundary; flipdirection::Bool=false)
+    
     N = boundary.node_num-1
-    α = abs(boundary.bias)
 
-    us = [0.0, [(α.^i-1)/(α^N-1) for i in range(0, stop=N, step=1)]...]
+    if abs(boundary.bias) != 1.0
+        α = abs(boundary.bias)
 
-    if boundary.bias > 0
+        us = [0.0, [(α.^i-1)/(α^N-1) for i in range(0, stop=N, step=1)]...]
+
+    else
+        us = collect(0:1:N)/(N)
+    end
+
+    if (boundary.bias > 0) != (!flipdirection)
         return us
     else
         return 1 .- us
@@ -31,15 +38,10 @@ function meshBoundary!(mesh::Mesh, boundary::Boundary, vertices, skipFirst::Bool
 
     # Stretching functions
     Δcoords = coords2 - coords1
-    N = boundary.node_num
-    is = collect(range(0, stop=N-1, step=1))
     
-    if abs(boundary.bias) == 1.0
-        N = boundary.node_num
-        nodes = (coords1 .+ Δcoords * (is ./ (N-1))')'
-    else
-        nodes = coords1' .+ Δcoords' .* getBiased(boundary)
-    end
+    # distribution
+    us = getFac(boundary)
+    nodes = coords1' .+ Δcoords' .* us
         
     #
     id1 = skipFirst ? 2 : 1
@@ -131,7 +133,7 @@ end
 
 function meshBlock!(mesh::Mesh, block, bounds, nodeMapping)
     if block[:type] == :transfinite
-        meshTransfiniteBlock!(mesh, block, bounds, nodeMapping)
+        meshTransfiniteBlock2!(mesh, block, bounds, nodeMapping)
     elseif block[:type] == :transition
         meshTransitionBlock!(mesh, block, bounds, nodeMapping)
     else
@@ -197,6 +199,21 @@ end
 
 function meshTransfiniteBlock2!(mesh::Mesh, block, bounds, nodeMapping)
     
+    function addElements!(mesh, last_node_ids, node_ids)
+        for j in 2:size(node_ids,1)
+            el_node1 = last_node_ids[j-1]
+            el_node2 = node_ids[j-1]
+            el_node3 = node_ids[j]
+            el_node4 = last_node_ids[j]
+
+            el_nodes = [el_node1, el_node2, el_node3, el_node4]
+            
+            el_id = appendElement!(mesh, el_nodes)
+        end
+    end
+
+    # TODO: check definition - same node_num/bias, same direction
+
     # extract blocks boundaries
     boundary_ids = block[:bounds]
     boundaries = bounds[abs.(boundary_ids)]
@@ -207,18 +224,56 @@ function meshTransfiniteBlock2!(mesh::Mesh, block, bounds, nodeMapping)
     vertices = Dict(id=>mesh.nodes[nodeMapping[:vertice][id]] for id in vertice_ids)
 
     # define corner points
-    P12, P14, P34, P32 = vertices[vertice_ids]
+    P12, P14, P34, P32 = (vertices[i] for i in vertice_ids)
+
+    println(vertice_ids)
+    println("Ps:", P12, P14, P34, P32)
+    println(vertices)
     
     # extract edge definitions
     linefunc(p1, p2) = (u) -> p1 .+ (p2.-p1) .* u
     c1 = linefunc(P12, P14)
-    c2 = linefunc(P32, P12)
+    c2 = linefunc(P12, P32)
     c3 = linefunc(P32, P34)
     c4 = linefunc(P14, P34)
     
     # calculate node positions
-    us = (α.^i-1)/(α^N_-1)
-    calculateTransfiniteNodes(c1, c2, c3, c4, P12, P14, P34, P32, us, vs)
+
+    us = getFac(boundaries[1], flipdirection=sign(boundary_ids[1])==-1)
+    vs = getFac(boundaries[2], flipdirection=sign(boundary_ids[2])==-1)
+
+    nodearray = calculateTransfiniteNodes(c1, c2, c3, c4, P12, P14, P34, P32, us, vs)
+
+    # add nodes and create elements
+    N1 = boundaries[1].node_num
+    N2 = boundaries[2].node_num
+
+    last_node_ids = getBoundaryNodeIds(boundary_ids[4], nodeMapping)[end:-1:1]
+    node_ids = zeros(Int64, size(last_node_ids, 1))
+
+    for i in range(2, N1-1)
+        # add bound node to node ids
+
+        for j in range(2, N2-1)
+            nodecoords = collect(nodearray[i, j])
+            node_ids[j] = appendNodes!(mesh, [nodecoords,])[1]
+        end
+
+        # add bound node to node ids
+        node_ids[1] = getBoundaryNodeIds(boundary_ids[1], nodeMapping)[i]
+        node_ids[end] = getBoundaryNodeIds(boundary_ids[3], nodeMapping)[i]
+
+        # add elements to mesh
+        addElements!(mesh, last_node_ids, node_ids)
+
+        last_node_ids[1:end] = node_ids[1:end]
+
+    end
+
+    node_ids[1:end] = getBoundaryNodeIds(boundary_ids[2], nodeMapping)
+
+    addElements!(mesh, last_node_ids, node_ids)
+
 end
                             
 function meshTransitionBlock!(mesh::Mesh, block, bounds, nodeMapping)
