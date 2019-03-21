@@ -1,3 +1,5 @@
+import Statistics: mean
+
 mutable struct Mesh
     nodes :: Vector{Vector{Float64}}
     elements :: Vector{Vector{Int64}}
@@ -14,7 +16,7 @@ function getFac(boundary::Boundary; flipdirection::Bool=false)
     if abs(boundary.bias) != 1.0
         α = abs(boundary.bias)
 
-        us = [0.0, [(α.^i-1)/(α^N-1) for i in range(0, stop=N, step=1)]...]
+        us = [[(α.^i-1)/(α^N-1) for i in range(0, stop=N, step=1)]...]
 
     else
         us = collect(0:1:N)/(N)
@@ -23,7 +25,7 @@ function getFac(boundary::Boundary; flipdirection::Bool=false)
     if (boundary.bias > 0) != (!flipdirection)
         return us
     else
-        return 1 .- us
+        return (1 .- us)[end:-1:1]
     end
 end
 
@@ -153,6 +155,12 @@ function blockdef2fun(mesh, block, bounds, nodeMapping)
     vertice_ids = [firstvert(boundary_id) for boundary_id in boundary_ids]
     vertices = Dict(id=>mesh.nodes[nodeMapping[:vertice][id]] for id in vertice_ids)
 
+    println()
+    println(vertice_ids)
+    println(vertices)
+    println(nodeMapping[:vertice])
+    println()
+
     # define corner points
     P12, P14, P34, P32 = (vertices[i] for i in vertice_ids)
     
@@ -231,7 +239,15 @@ function meshTransfiniteBlock2!(mesh::Mesh, block, bounds, nodeMapping)
     addElements!(mesh, last_node_ids, node_ids)
 
 end
-                            
+    
+function meshTransitionUnit!(mesh::Mesh, nodes1::Vector{Int64}, nodes2::Vector{Int64}, left::Bool)
+    cornerpoints = mesh.nodes[nodes1[1], nodes1[end], nodes2[1], nodes2[end]]
+
+    centerpoint = sum(cornerpoints)/size(cornerpoints,1)
+
+    center_id = appendNodes!(mesh, [centerpoint,])
+end
+
 function meshTransitionBlock!(mesh::Mesh, block, bounds, nodeMapping)
     
     # extract blocks boundaries
@@ -249,20 +265,34 @@ function meshTransitionBlock!(mesh::Mesh, block, bounds, nodeMapping)
     N2 = boundaries[2].node_num
 
     # get node positions
-    vs = getFac(boundaries[2], flipdirection=sign(boundary_ids[2])==-1)
+    vs = getFac(boundaries[2])
+
+    # storage vector for node_id_rows
+    rows = Vector{Vector{Int64}}()
+
+    # add first row (boundary)
+    push!(rows, getBoundaryNodeIds(boundary_ids[1], nodeMapping))
+
+    currow_node_ids = Vector{Int64}()
 
     for i in 2:N2-1
+
+        # current rows node ids storage vector
+        
+
         N = Int(floor((N-1)/2))+1
 
-        us = collect(1:N-1)/(N-1)
-        vs_cur = [vs[i+1]]
+        us = collect(1:N-1)[1:end-1]/(N-1)
+        vs_cur = [vs[i]]
 
         nodearray = calculateTransfiniteNodes(c1, c2, c3, c4, P12, P14, P34, P32, us, vs_cur)
-        
-        for nodetuple in nodearray
+
+        for (j, nodetuple) in enumerate(nodearray)
             nodecoords = collect(nodetuple)
-            appendNodes!(mesh, [nodecoords,])
+            curnode_id = appendNodes!(mesh, [nodecoords,])
         end
+
+
     end
 
 end

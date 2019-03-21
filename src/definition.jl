@@ -140,7 +140,7 @@ function transitionextrude(meshdef::MeshDef, boundlink::BoundaryLink, direction:
     N = convert(Int64, floor((bound_start.node_num-1) / 2^layers))+1
     
     # do extrusion
-    blocklink = extrude(meshdef, boundlink, vec, distance, layers+1, 0.5, blocktype=:transition,
+    blocklink = extrude(meshdef, boundlink, vec, distance, layers+1, -0.5, blocktype=:transition,
                         parallel_node_num = N)
     
     return blocklink    

@@ -52,8 +52,6 @@ function show(meshdef::MeshDef; hideVertices::Bool=false)
     mesh = emptyMesh()
     meshBoundaries!(mesh, meshdef)
 
-    println(mesh.nodes  )
-
     show!(p, mesh)
     
     if !hideVertices
