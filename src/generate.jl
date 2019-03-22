@@ -241,11 +241,30 @@ function meshTransfiniteBlock2!(mesh::Mesh, block, bounds, nodeMapping)
 end
     
 function meshTransitionUnit!(mesh::Mesh, nodes1::Vector{Int64}, nodes2::Vector{Int64}, left::Bool)
-    cornerpoints = mesh.nodes[nodes1[1], nodes1[end], nodes2[1], nodes2[end]]
+    cornerpoints_l = mesh.nodes[[nodes1[1], nodes1[3], nodes2[1], nodes2[2]]]
+    cornerpoints = mesh.nodes[[nodes1[1], nodes1[end], nodes2[1], nodes2[end]]]
+    cornerpoints_r = mesh.nodes[[nodes1[3], nodes1[end], nodes2[2], nodes2[end]]]
 
-    centerpoint = sum(cornerpoints)/size(cornerpoints,1)
+    center_ids = zeros(Int64, 3)
 
-    center_id = appendNodes!(mesh, [centerpoint,])
+    for (i, cp) in enumerate((cornerpoints_l, cornerpoints, cornerpoints_r))
+        centerpoint = sum(cp)/size(cp,1)
+
+        center_ids[i] = appendNodes!(mesh, [centerpoint,])[1]
+    end
+
+    # add elements
+
+    n1 = nodes1
+    n2 = nodes2
+    c = center_ids
+
+    appendElement!(mesh, [n1[1], n1[2], c[1], n2[1]])
+    appendElement!(mesh, [n1[2], n1[3], c[2], c[1]])
+    appendElement!(mesh, [c[1], c[2], n2[2], n2[1]])
+    appendElement!(mesh, [n1[3], n1[4], c[3], c[2]])
+    appendElement!(mesh, [c[2], c[3], n2[3], n2[2]])
+    appendElement!(mesh, [n1[4], n1[5], n2[3], c[3]])
 end
 
 function meshTransitionBlock!(mesh::Mesh, block, bounds, nodeMapping)
@@ -270,31 +289,64 @@ function meshTransitionBlock!(mesh::Mesh, block, bounds, nodeMapping)
     # storage vector for node_id_rows
     rows = Vector{Vector{Int64}}()
 
+    # left and right node 
+    nodes_l = getBoundaryNodeIds(boundary_ids[4], nodeMapping)
+    nodes_r = getBoundaryNodeIds(boundary_ids[2], nodeMapping)[end:-1:1]
+
     # add first row (boundary)
     push!(rows, getBoundaryNodeIds(boundary_ids[1], nodeMapping))
 
-    currow_node_ids = Vector{Int64}()
-
+    # add nodes in rows
     for i in 2:N2-1
 
-        # current rows node ids storage vector
-        
-
+        # new number of elements is half of previous
+        # number of elements is node_num: N minus 1
         N = Int(floor((N-1)/2))+1
 
+        # interpolation values for transfinite interpolation
         us = collect(1:N-1)[1:end-1]/(N-1)
         vs_cur = [vs[i]]
 
+        # calculate inner node coordinates using transfinite interpolateion
         nodearray = calculateTransfiniteNodes(c1, c2, c3, c4, P12, P14, P34, P32, us, vs_cur)
 
-        for (j, nodetuple) in enumerate(nodearray)
-            nodecoords = collect(nodetuple)
-            curnode_id = appendNodes!(mesh, [nodecoords,])
-        end
+        # convert nodearray in appropriate from for adding to mesh 
+        node_coords = [collect(nodearray[i]) for i in 1:size(nodearray,1)]
+        
+        # add nodes to mesh
+        curnode_ids = appendNodes!(mesh, node_coords)
 
+        # collect node ids of border nodes to get node ids of complete row
+        nodeid_l = nodes_l[i]
+        nodeid_r = nodes_r[i]
+
+        push!(rows, [nodeid_l, curnode_ids..., nodeid_r])
 
     end
 
+    push!(rows, getBoundaryNodeIds(boundary_ids[3], nodeMapping)[end:-1:1])
+
+
+    for row in rows
+        println(mesh.nodes[row])
+    end
+
+    for i in 2:size(rows,1)
+        
+        row1 = rows[i-1]
+        row2 = rows[i]
+
+        left = true
+        println(collect(0:2:size(row2,1)-4))
+        for j in 1:(size(row2,1)-1)÷2
+            nodes1 = row1[4*(j-1)+1:4*j+1]
+            nodes2 = row2[2*(j-1)+1:2*j+1]
+
+            meshTransitionUnit!(mesh, nodes1, nodes2, left)
+
+            left = !left
+        end
+    end
 end
                         
 function translateNodes!(mesh::Mesh, node_ids::Vector{Int64}, translation::Vector{Float64}; copynodes::Bool=true)
