@@ -290,8 +290,13 @@ function meshTransitionBlock!(mesh::Mesh, block, bounds, nodeMapping)
     rows = Vector{Vector{Int64}}()
 
     # left and right node 
-    nodes_l = getBoundaryNodeIds(boundary_ids[4], nodeMapping)
-    nodes_r = getBoundaryNodeIds(boundary_ids[2], nodeMapping)[end:-1:1]
+    nodes_l = getBoundaryNodeIds(boundary_ids[4], nodeMapping)[end:-1:1]
+    nodes_r = getBoundaryNodeIds(boundary_ids[2], nodeMapping)
+
+    println("HallO")
+    println([mesh.nodes[n] for n in nodes_l])
+    println([mesh.nodes[n] for n in nodes_r])
+    println()
 
     # add first row (boundary)
     push!(rows, getBoundaryNodeIds(boundary_ids[1], nodeMapping))
