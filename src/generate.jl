@@ -1,5 +1,8 @@
 import Statistics: mean
 
+"""
+Container for generated Mesh
+"""
 mutable struct Mesh
     nodes :: Vector{Vector{Float64}}
     elements :: Vector{Vector{Int64}}
@@ -96,6 +99,11 @@ function meshBoundaries!(mesh::Mesh, meshdefinition::MeshDef)
     return nodeMapping
 end
 
+"""
+    mesh(meshdef)
+
+Generate mesh from meshdefinition
+"""
 function mesh(meshdefinition::MeshDef)
     
     # disable garbage collection during mesh creation

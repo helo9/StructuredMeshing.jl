@@ -1,3 +1,6 @@
+"""
+Container for boundary definitions.
+"""
 struct Boundary
     boundtype :: Symbol
     vertice_start :: Int64
@@ -10,11 +13,15 @@ struct Boundary
     end
 end
 
+"""
+Container for mesh defintion, consisting of multiple blocks.
+"""
 struct MeshDef
     blocks :: Vector{Dict{Symbol, Any}}
     bounds :: Vector{Boundary}
     vertices :: Vector{Vector{Float64}}
 end
+
 
 function emptyMeshDef()
     blocks = Vector{Dict{Symbol,Any}}()
@@ -24,7 +31,12 @@ function emptyMeshDef()
     MeshDef(blocks, bounds, vertices)
 end
 
-function addVertice(meshdef::MeshDef, coordinates::Vector{Float64})
+"""
+    addVertex(meshdef, coordinates)
+
+Adds a vertex to a mesh definition, returns the vertex's id
+"""
+function addVertex(meshdef::MeshDef, coordinates::Vector{Float64})
     push!(meshdef.vertices, coordinates)
     
     return size(meshdef.vertices, 1)
@@ -45,6 +57,11 @@ struct BlockLink
     vert_right :: Int64
 end
 
+"""
+    extrude(meshdef, vert_start, direction, length, node_num, bias)
+
+Extrude an vertex - results in an boundary
+"""
 function extrude(meshdef::MeshDef, vert_start::Int64, direction::Vector{Float64}, length::Float64, node_num::Int64, bias::Float64=1.0)
     dir_norm = direction/norm(direction)
     
@@ -62,6 +79,11 @@ function extrude(meshdef::MeshDef, vert_start::Int64, direction::Vector{Float64}
     return BoundaryLink(bound_id, vert_start, vert_end)
 end
 
+"""
+    connect(meshdef, vert_start, vert_end, node_num, bias)
+
+Connect two vertices to get a boundary
+"""
 function connect(meshdef::MeshDef, vert_start::Int64, vert_end::Int64, node_num::Int64, bias::Float64=1.0)
     
     push!(meshdef.bounds, Boundary(:straight, vert_start, vert_end, node_num, bias))
@@ -71,6 +93,11 @@ function connect(meshdef::MeshDef, vert_start::Int64, vert_end::Int64, node_num:
     return BoundaryLink(bound_id, vert_start, vert_end)
 end
 
+"""
+    extrude(meshdef, boundlink, direction, length, node_num, bias)
+
+Extrude boundary to build new block
+"""
 function extrude(meshdef::MeshDef, boundlink::BoundaryLink, direction::Vector{Float64}, length::Float64, node_num::Int64, bias::Float64=1.0;
         blocktype::Symbol=:transfinite, parallel_node_num::Int64=0)
     
@@ -109,6 +136,11 @@ function angle(vec_a::Vector{Float64}, vec_b::Vector{Float64})
     acos((vec_a'*vec_b) / (norm(vec_a) * norm(vec_b)))
 end
 
+"""
+    transitionextrude(meshdef, boundlink, direction, layers)
+
+Generate Transition Mesh from extrusion of boundary
+"""
 function transitionextrude(meshdef::MeshDef, boundlink::BoundaryLink, direction::Vector{Float64}, layers::Int64)
     
     bound_start = meshdef.bounds[boundlink.id]
@@ -146,7 +178,11 @@ function transitionextrude(meshdef::MeshDef, boundlink::BoundaryLink, direction:
     return blocklink    
 end
 
+"""
+    defineCartesian(xmin, ymin, xmax, ymax, nx, ny)
 
+Build up simple equidistant cartesian mesh
+"""
 function defineCartesian(xmin::Float64, ymin::Float64, xmax::Float64, ymax::Float64, nx::Int64, ny::Int64)
     # Create vertices
     vertices = [[xmin, ymin], [xmax, ymin], [xmax, ymax], [xmin, ymax]]
