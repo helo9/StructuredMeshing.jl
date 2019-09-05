@@ -35,7 +35,7 @@ and create boundary.
 bound1 = extrude(meshdef, v1, [1.0, 0.0], 1.0, 10)
 ```
 
-`extrude` and `connect` return ´BoundaryLinks´s. Those can be extruded resulting in twodimensional blocks:
+`extrude` and `connect` return `BoundaryLinks`s. Those can be extruded resulting in twodimensional blocks:
 
 ```julia
 block1 = extrude(meshdef, bound1, [0.0, 1.0], 1.0, 10)
