@@ -20,7 +20,7 @@ export MeshDef, Mesh
 # functions
 
 ## mesh definition
-export emptyMeshDef, addVertice, extrude, transitionextrude, defineCartesian, connect
+export emptyMeshDef, addVertex, extrude, transitionextrude, defineCartesian, connect
 
 ## mesh generation
 export mesh

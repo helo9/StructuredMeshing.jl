@@ -68,7 +68,7 @@ function extrude(meshdef::MeshDef, vert_start::Int64, direction::Vector{Float64}
     coords_start = meshdef.vertices[vert_start]
     coords_new = coords_start + dir_norm * length
     
-    vert_end = addVertice(meshdef, coords_new)
+    vert_end = addVertex(meshdef, coords_new)
     
     bound_tmp = Boundary(:straight, vert_start, vert_end, node_num, -bias)
     
