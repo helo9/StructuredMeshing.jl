@@ -15,6 +15,7 @@ import Base.angle
 import Base.show
 
 # types
+
 export MeshDef, Mesh
 
 # functions
@@ -27,6 +28,11 @@ export mesh
 
 ## abaqus export
 export writeAbq
+
+## visualisation
+export show
+
+# include
 
 include("definition.jl")
 include("transfinite.jl")
