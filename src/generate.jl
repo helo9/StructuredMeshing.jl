@@ -233,7 +233,7 @@ function meshTransfiniteBlock2!(mesh::Mesh, block, bounds, nodeMapping)
 
         # add bound node to node ids
         node_ids[1] = getBoundaryNodeIds(boundary_ids[1], nodeMapping)[i]
-        node_ids[end] = getBoundaryNodeIds(boundary_ids[3], nodeMapping)[i]
+        node_ids[end] = getBoundaryNodeIds(boundary_ids[3], nodeMapping)[end-(i-1)]
 
         # add elements to mesh
         addElements!(mesh, last_node_ids, node_ids)

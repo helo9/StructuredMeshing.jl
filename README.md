@@ -4,9 +4,19 @@
 
 Structured Meshing algrorithms implemented Julia. Targeted at Abaqus FEM solver.
 
-## Motivation
+In Abaqus the mesh creation is top-down. Starting from the overall geometry partitions are created and
+meshed. While this approach works good in the graphical user interface, I consider it very elaborate for
+scripting. There I started this package doing meshes from bottom-up.
 
-Considering the mesh creation of abaqus very elaborate, I started this package inspired by abapy.
+**WARNING: This package is in very early development stage**
+
+## Installation
+
+Enter the package manager and install from Git:
+
+```
+pkg > add https://github.com/helo9/StructuredMeshing.jl
+```
 
 ## Usage
 
