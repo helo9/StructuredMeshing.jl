@@ -2,11 +2,11 @@
 
 ![](examples/TransitionMesh.png)
 
-Structured Meshing algrorithms implemented Julia. Targeted at Abaqus FEM solver.
+Structured Meshing algrorithms implemented in Julia, targeted at Abaqus FEM solver.
 
-In Abaqus the mesh creation is top-down. Starting from the overall geometry partitions are created and
-meshed. While this approach works good in the graphical user interface, I consider it very elaborate for
-scripting. There I started this package doing meshes from bottom-up.
+In Abaqus the mesh creation is done top-down. Starting from an overall geometry partitions are created and
+meshed. While this approach works well within the graphical user interface, I consider it very elaborate during
+scripted creation of simple meshes. Therefore this package follows a bottom up approach.
 
 **WARNING: This package is in very early development stage**
 
@@ -45,7 +45,7 @@ and create boundary.
 bound1 = extrude(meshdef, v1, [1.0, 0.0], 1.0, 10)
 ```
 
-`extrude` and `connect` return `BoundaryLinks`s. Those can be extruded resulting in twodimensional blocks:
+`extrude` and `connect` return `BoundaryLinks`s. Those can be extruded again resulting in twodimensional blocks:
 
 ```julia
 block1 = extrude(meshdef, bound1, [0.0, 1.0], 1.0, 10)
@@ -55,8 +55,8 @@ show(block1)
 
 ![](examples/simpledef.png)
 
-The returned `BlockLink` named `block1` can again be used to extrude its boundaries. We stop
-here and create an mesh:
+The returned `BlockLink` named `block1` can again be used to extrude its boundaries and build more complex
+meshes. We stop here and create an mesh:
 
 ```julia
 mesh1 = mesh(meshdef)
