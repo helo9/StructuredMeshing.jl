@@ -36,7 +36,7 @@ end
 
 Adds a vertex to a mesh definition, returns the vertex's id
 """
-function addVertex(meshdef::MeshDef, coordinates::Vector{Float64})
+function addVertex!(meshdef::MeshDef, coordinates::Vector{Float64})
     push!(meshdef.vertices, coordinates)
     
     return size(meshdef.vertices, 1)
@@ -62,13 +62,13 @@ end
 
 Extrude an vertex - results in an boundary
 """
-function extrude(meshdef::MeshDef, vert_start::Int64, direction::Vector{Float64}, length::Float64, node_num::Int64, bias::Float64=1.0)
+function extrude!(meshdef::MeshDef, vert_start::Int64, direction::Vector{Float64}, length::Float64, node_num::Int64, bias::Float64=1.0)
     dir_norm = direction/norm(direction)
     
     coords_start = meshdef.vertices[vert_start]
     coords_new = coords_start + dir_norm * length
     
-    vert_end = addVertex(meshdef, coords_new)
+    vert_end = addVertex!(meshdef, coords_new)
     
     bound_tmp = Boundary(:straight, vert_start, vert_end, node_num, -bias)
     
@@ -84,7 +84,7 @@ end
 
 Connect two vertices to get a boundary
 """
-function connect(meshdef::MeshDef, vert_start::Int64, vert_end::Int64, node_num::Int64, bias::Float64=1.0)
+function connect!(meshdef::MeshDef, vert_start::Int64, vert_end::Int64, node_num::Int64, bias::Float64=1.0)
     
     push!(meshdef.bounds, Boundary(:straight, vert_start, vert_end, node_num, bias))
     
@@ -98,14 +98,14 @@ end
 
 Extrude boundary to build new block
 """
-function extrude(meshdef::MeshDef, boundlink::BoundaryLink, direction::Vector{Float64}, length::Float64, node_num::Int64, bias::Float64=1.0;
+function extrude!(meshdef::MeshDef, boundlink::BoundaryLink, direction::Vector{Float64}, length::Float64, node_num::Int64, bias::Float64=1.0;
         blocktype::Symbol=:transfinite, parallel_node_num::Int64=0)
     
     bounds = Vector{Int64}()
     
-    boundlink1 = extrude(meshdef, boundlink.vert_start, direction, length, node_num, bias)
+    boundlink1 = extrude!(meshdef, boundlink.vert_start, direction, length, node_num, bias)
     
-    boundlink2 = extrude(meshdef, boundlink.vert_end, direction, length, node_num, bias)
+    boundlink2 = extrude!(meshdef, boundlink.vert_end, direction, length, node_num, bias)
     
     startbound = meshdef.bounds[boundlink.id]
     
@@ -114,7 +114,7 @@ function extrude(meshdef::MeshDef, boundlink::BoundaryLink, direction::Vector{Fl
         parallel_node_num = startbound.node_num
     end
     
-    boundlink3 = connect(meshdef, boundlink2.vert_end, boundlink1.vert_end, parallel_node_num, -startbound.bias)        
+    boundlink3 = connect!(meshdef, boundlink2.vert_end, boundlink1.vert_end, parallel_node_num, -startbound.bias)        
     
     bounds = [boundlink.id, boundlink2.id, boundlink3.id, -boundlink1.id]
     
@@ -128,7 +128,7 @@ function extrude(meshdef::MeshDef, boundlink::BoundaryLink, direction::Vector{Fl
         boundlink1.vert_start, boundlink1.vert_end)
 end
 
-function extrude(meshdef::MeshDef, boundlink::BoundaryLink, integrate::Vector{BoundaryLink})
+function extrude!(meshdef::MeshDef, boundlink::BoundaryLink, integrate::Vector{BoundaryLink})
     error("Not Implemented yet!")
 end
 
@@ -141,7 +141,7 @@ end
 
 Generate Transition Mesh from extrusion of boundary
 """
-function transitionextrude(meshdef::MeshDef, boundlink::BoundaryLink, direction::Vector{Float64}, layers::Int64)
+function transitionextrude!(meshdef::MeshDef, boundlink::BoundaryLink, direction::Vector{Float64}, layers::Int64)
     
     bound_start = meshdef.bounds[boundlink.id]
     
@@ -172,7 +172,7 @@ function transitionextrude(meshdef::MeshDef, boundlink::BoundaryLink, direction:
     N = convert(Int64, floor((bound_start.node_num-1) / 2^layers))+1
     
     # do extrusion
-    blocklink = extrude(meshdef, boundlink, vec, distance, layers+1, -0.5, blocktype=:transition,
+    blocklink = extrude!(meshdef, boundlink, vec, distance, layers+1, -0.5, blocktype=:transition,
                         parallel_node_num = N)
     
     return blocklink    

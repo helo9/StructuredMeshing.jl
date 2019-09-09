@@ -223,10 +223,10 @@ function meshTransfiniteBlock2!(mesh::Mesh, block, bounds, nodeMapping)
     last_node_ids = getBoundaryNodeIds(boundary_ids[4], nodeMapping)[end:-1:1]
     node_ids = zeros(Int64, size(last_node_ids, 1))
 
-    for i in range(2, N1-1)
+    for i in 2:N1-1
         # add bound node to node ids
 
-        for j in range(2, N2-1)
+        for j in 2:N2-1
             nodecoords = collect(nodearray[i, j])
             node_ids[j] = appendNodes!(mesh, [nodecoords,])[1]
         end
