@@ -27,13 +27,13 @@ starts with vertices. From two vertices a boundary can be created using `connect
 meshdef = emptyMeshDef()
 
 # create first vertex
-v1 = addVertex(meshdef, [0.0, 0.0])
+v1 = addVertex!(meshdef, [0.0, 0.0])
 
 # create second vertex
-v2 = addVertex(meshdef, [1.0, 0.0])
+v2 = addVertex!(meshdef, [1.0, 0.0])
 
 # create boundary with 10 mesh nodes
-bl = connect(meshdef, v1, v2, 10)
+bl = connect!(meshdef, v1, v2, 10)
 ```
 
 As an alternativ one could extrude the first vertex to simultaneous create second vertex
@@ -42,13 +42,13 @@ and create boundary.
 ```julia
 # meshdef, v1 are defined
 
-bound1 = extrude(meshdef, v1, [1.0, 0.0], 1.0, 10)
+bound1 = extrude!(meshdef, v1, [1.0, 0.0], 1.0, 10)
 ```
 
 `extrude` and `connect` return `BoundaryLinks`s. Those can be extruded again resulting in twodimensional blocks:
 
 ```julia
-block1 = extrude(meshdef, bound1, [0.0, 1.0], 1.0, 10)
+block1 = extrude!(meshdef, bound1, [0.0, 1.0], 1.0, 10)
 
 show(block1)
 ```
