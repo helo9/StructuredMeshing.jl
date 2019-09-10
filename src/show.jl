@@ -1,6 +1,6 @@
 using Plots
 
-function show!(p::Plots.Plot, boundary::Boundary, meshdef::MeshDef)
+function show!(p::Plots.Plot, boundary::StraightBoundary, meshdef::MeshDef)
     vert_start = boundary.vertice_start
     vert_end = boundary.vertice_end
     coords = meshdef.vertices[[vert_start, vert_end]]
@@ -8,6 +8,7 @@ function show!(p::Plots.Plot, boundary::Boundary, meshdef::MeshDef)
     plot!(p, [coords[1][1], coords[2][1]], [coords[1][2], coords[2][2]], linecolor="blue")
 end
 
+function show!(p::Plots.Plot, boundary::CircularBoundary, meshdef::MeshDef) end
 
 function show!(p::Plots.Plot, vertice::Vector{Float64})
     scatter!(p, [vertice[1]], [vertice[2]], marker=(:circle, :red, 6))

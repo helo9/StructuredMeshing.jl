@@ -12,7 +12,7 @@ function emptyMesh()
     Mesh(Vector{Float64}[], Vector{Int64}[])
 end
 
-function getFac(boundary::Boundary; flipdirection::Bool=false)
+function getFac(boundary::StraightBoundary; flipdirection::Bool=false)
     
     N = boundary.node_num-1
 
@@ -32,10 +32,7 @@ function getFac(boundary::Boundary; flipdirection::Bool=false)
     end
 end
 
-function meshBoundary!(mesh::Mesh, boundary::Boundary, vertices, skipFirst::Bool, skipLast::Bool)
-    if boundary.boundtype != :straight
-        throw(DomainError())
-    end
+function meshBoundary!(mesh::Mesh, boundary::StraightBoundary, vertices, skipFirst::Bool, skipLast::Bool)
     
     # get coordinates of start and end point
     coords1 = vertices[boundary.vertice_start]

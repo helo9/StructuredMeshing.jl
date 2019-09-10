@@ -1,15 +1,29 @@
 """
 Container for boundary definitions.
 """
-struct Boundary
-    boundtype :: Symbol
+
+abstract type AbstractBoundary end
+
+struct StraightBoundary <: AbstractBoundary
     vertice_start :: Int64
     vertice_end :: Int64
     node_num :: Int64
-    bias:: Float64
+    bias :: Float64
     
-    function Boundary(boundtype::Symbol, vertice_start::Int64, vertice_end::Int64, node_num::Int64, bias::Float64=1.0)
-        new(boundtype, vertice_start, vertice_end, node_num, bias)
+    function StraightBoundary(vertice_start::Int64, vertice_end::Int64, node_num::Int64, bias::Float64=1.0)
+        new(vertice_start, vertice_end, node_num, bias)
+    end
+end
+    
+struct CircularBoundary <: AbstractBoundary
+    vertice_start :: Int64
+    vertice_end :: Int64
+    node_num :: Int64
+    bias :: Float64
+    radius :: Float64
+    
+    function CircularBoundary(vertice_start::Int64, vertice_end::Int64, node_num::Int64, radius::Float64, bias::Float64=1.0)
+        new(vertice_start, vertice_end, node_num, bias, radius)
     end
 end
 
@@ -18,14 +32,14 @@ Container for mesh defintion, consisting of multiple blocks.
 """
 struct MeshDef
     blocks :: Vector{Dict{Symbol, Any}}
-    bounds :: Vector{Boundary}
+    bounds :: Vector{AbstractBoundary}
     vertices :: Vector{Vector{Float64}}
 end
 
 
 function emptyMeshDef()
     blocks = Vector{Dict{Symbol,Any}}()
-    bounds = Vector{Boundary}()
+    bounds = Vector{AbstractBoundary}()
     vertices = Vector{Vector{Float64}}()
     
     MeshDef(blocks, bounds, vertices)
@@ -70,7 +84,7 @@ function extrude!(meshdef::MeshDef, vert_start::Int64, direction::Vector{Float64
     
     vert_end = addVertex!(meshdef, coords_new)
     
-    bound_tmp = Boundary(:straight, vert_start, vert_end, node_num, -bias)
+    bound_tmp = StraightBoundary(vert_start, vert_end, node_num, -bias)
     
     push!(meshdef.bounds, bound_tmp)
     
@@ -86,7 +100,7 @@ Connect two vertices to get a boundary
 """
 function connect!(meshdef::MeshDef, vert_start::Int64, vert_end::Int64, node_num::Int64, bias::Float64=1.0)
     
-    push!(meshdef.bounds, Boundary(:straight, vert_start, vert_end, node_num, bias))
+    push!(meshdef.bounds, StraightBoundary(vert_start, vert_end, node_num, bias))
     
     bound_id = size(meshdef.bounds, 1)
     
@@ -178,6 +192,31 @@ function transitionextrude!(meshdef::MeshDef, boundlink::BoundaryLink, direction
     return blocklink    
 end
 
+
+function rotate!(meshdef, vert_start::Int64, center, angle::Float64, node_num::Int64)
+    coords_start = meshdef.vertices[vert_start]
+    
+    leg = coords_start - center
+    
+    radius = norm(leg)
+    
+    # rotate leg
+    T = [cos(angle) -sin(angle); sin(angle) cos(angle)]
+    leg_rot = T * leg
+    
+    coords_end = center + leg_rot
+    
+    vert_end = addVertex!(meshdef, coords_end)
+    
+    boundary = CircularBoundary(vert_start, vert_end, node_num, radius)
+    
+    push!(meshdef.bounds, boundary)
+    
+    bound_id = size(meshdef.bounds, 1)
+    
+    return BoundaryLink(bound_id, vert_start, vert_end)
+end
+
 """
     defineCartesian(xmin, ymin, xmax, ymax, nx, ny)
 
@@ -191,7 +230,7 @@ function defineCartesian(xmin::Float64, ymin::Float64, xmax::Float64, ymax::Floa
     bounds = Vector{Boundary}(undef, 4)
     for i in 1:4
         n = i in (1,3) ? nx : ny
-        bounds[i] = Boundary(:equidistant, i, i%4+1, n)
+        bounds[i] = StraightBoundary(i, i%4+1, n)
     end
 
     blocks = [Dict(:type=>:cartesian, :bounds=>[1,2,3,4])]
