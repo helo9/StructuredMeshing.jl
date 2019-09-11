@@ -8,7 +8,28 @@ function show!(p::Plots.Plot, boundary::StraightBoundary, meshdef::MeshDef)
     plot!(p, [coords[1][1], coords[2][1]], [coords[1][2], coords[2][2]], linecolor="blue")
 end
 
-function show!(p::Plots.Plot, boundary::CircularBoundary, meshdef::MeshDef) end
+function show!(p::Plots.Plot, boundary::CircularBoundary, meshdef::MeshDef) 
+    vert_start = boundary.vertice_start
+    vert_end = boundary.vertice_end
+    coords = meshdef.vertices[[vert_start, vert_end]]
+    
+    # two circle intersection -> https://math.stackexchange.com/a/1367732
+    dist = norm(coords[1]-coords[2])
+    midpoint = (coords[1]+coords[2])/2
+    normaldist = sqrt(boundary.radius^2 - dist^2/4)
+    normalvec = reverse((coords[1] - coords[2])) .* [1 -1]
+    center = midpoint .+ sign(boundary.radius) .* normalvec .* normaldist 
+    
+    leg1 = coords[1] .- center
+    leg2 = coords[2] .- center
+    
+    γ = angle(leg1, leg2)
+    
+    x(α) = leg1[1] * cos(α) - leg1[2] * sin(α)
+    y(α) = leg1[1] * sin(α) + leg1[2] * cos(α)
+    
+    plot!(p, x, y, 0, γ, leg=false)
+end
 
 function show!(p::Plots.Plot, vertice::Vector{Float64})
     scatter!(p, [vertice[1]], [vertice[2]], marker=(:circle, :red, 6))

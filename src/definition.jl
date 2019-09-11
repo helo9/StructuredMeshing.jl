@@ -217,6 +217,11 @@ function rotate!(meshdef, vert_start::Int64, center, angle::Float64, node_num::I
     return BoundaryLink(bound_id, vert_start, vert_end)
 end
 
+
+function rotate!(meshdef::MeshDef, boundary::BoundaryLink, center::Int64, angle::Float64; fill=false, node_num=Nothing)
+    # TODO implement
+end
+
 """
     defineCartesian(xmin, ymin, xmax, ymax, nx, ny)
 
