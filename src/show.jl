@@ -17,16 +17,17 @@ function show!(p::Plots.Plot, boundary::CircularBoundary, meshdef::MeshDef)
     dist = norm(coords[1]-coords[2])
     midpoint = (coords[1]+coords[2])/2
     normaldist = sqrt(boundary.radius^2 - dist^2/4)
-    normalvec = reverse((coords[1] - coords[2])) .* [1 -1]
+    normalvec = reverse((coords[1] - coords[2])) .* [1, -1]
+    normalvec /= norm(normalvec)
     center = midpoint .+ sign(boundary.radius) .* normalvec .* normaldist 
     
     leg1 = coords[1] .- center
     leg2 = coords[2] .- center
     
-    γ = angle(leg1, leg2)
+    γ = angle(vec(leg1), vec(leg2))
     
-    x(α) = leg1[1] * cos(α) - leg1[2] * sin(α)
-    y(α) = leg1[1] * sin(α) + leg1[2] * cos(α)
+    x(α) = leg1[1] * cos(α) - leg1[2] * sin(α) + center[1]
+    y(α) = leg1[1] * sin(α) + leg1[2] * cos(α) + center[2]
     
     plot!(p, x, y, 0, γ, leg=false)
 end
@@ -72,9 +73,9 @@ function show(meshdef::MeshDef; hideVertices::Bool=false)
     end
     
     mesh = emptyMesh()
-    meshBoundaries!(mesh, meshdef)
+    #meshBoundaries!(mesh, meshdef)
 
-    show!(p, mesh)
+    #show!(p, mesh)
     
     if !hideVertices
         for vertice in meshdef.vertices

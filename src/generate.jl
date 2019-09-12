@@ -54,6 +54,9 @@ function meshBoundary!(mesh::Mesh, boundary::StraightBoundary, vertices, skipFir
     return node_ids
 end
 
+function meshBoundary!(mesh::Mesh, boundary::CircularBoundary, vertices, skipFirst::Bool, skipLast::Bool)
+end
+
 function meshBoundaries!(mesh::Mesh, meshdefinition::MeshDef)
     # create Dict for Node mapping, mapping of node_ids to boundary respectiveley vertice ids
     nodeMapping = Dict(:vertice => Dict{Int64, Int64}(), :boundary => Dict{Int64, Vector{Int64}}())
