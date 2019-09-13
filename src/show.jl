@@ -13,13 +13,7 @@ function show!(p::Plots.Plot, boundary::CircularBoundary, meshdef::MeshDef)
     vert_end = boundary.vertice_end
     coords = meshdef.vertices[[vert_start, vert_end]]
     
-    # two circle intersection -> https://math.stackexchange.com/a/1367732
-    dist = norm(coords[1]-coords[2])
-    midpoint = (coords[1]+coords[2])/2
-    normaldist = sqrt(boundary.radius^2 - dist^2/4)
-    normalvec = reverse((coords[1] - coords[2])) .* [1, -1]
-    normalvec /= norm(normalvec)
-    center = midpoint .+ sign(boundary.radius) .* normalvec .* normaldist 
+    center = circlecenter(coords..., boundary.radius)
     
     leg1 = coords[1] .- center
     leg2 = coords[2] .- center
@@ -73,9 +67,9 @@ function show(meshdef::MeshDef; hideVertices::Bool=false)
     end
     
     mesh = emptyMesh()
-    #meshBoundaries!(mesh, meshdef)
+    meshBoundaries!(mesh, meshdef)
 
-    #show!(p, mesh)
+    show!(p, mesh)
     
     if !hideVertices
         for vertice in meshdef.vertices

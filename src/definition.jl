@@ -159,10 +159,6 @@ function transitionextrude!(meshdef::MeshDef, boundlink::BoundaryLink, direction
     
     bound_start = meshdef.bounds[boundlink.id]
     
-    if bound_start.boundtype != :straight && bound_start.bias != 1.0
-        error("Transition block must start from straight, equidistant boundary!")
-    end
-    
     # calculate Element Size on start boundary
     coords1 = meshdef.vertices[boundlink.vert_start]
     coords2 = meshdef.vertices[boundlink.vert_end]

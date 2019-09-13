@@ -12,7 +12,7 @@ function emptyMesh()
     Mesh(Vector{Float64}[], Vector{Int64}[])
 end
 
-function getFac(boundary::StraightBoundary; flipdirection::Bool=false)
+function getFac(boundary::AbstractBoundary; flipdirection::Bool=false)
     
     N = boundary.node_num-1
 
@@ -55,6 +55,23 @@ function meshBoundary!(mesh::Mesh, boundary::StraightBoundary, vertices, skipFir
 end
 
 function meshBoundary!(mesh::Mesh, boundary::CircularBoundary, vertices, skipFirst::Bool, skipLast::Bool)
+    
+    coords1 = vertices[boundary.vertice_start]
+    coords2 = vertices[boundary.vertice_end]
+    
+    circcenter = circlecenter(coords1, coords2, boundary.radius)
+    
+    us = getFac(boundary)
+    nodes = hcat(circlesection(coords1, coords2, circcenter, us)...)
+    
+    println(us)
+    println(circlesection(coords1, coords2, circcenter, us))
+    
+    #
+    id1 = skipFirst ? 2 : 1
+    id2 = skipLast ? 1 : 0
+    
+    appendNodes!(mesh, nodes[id1:end-id2,:])
 end
 
 function meshBoundaries!(mesh::Mesh, meshdefinition::MeshDef)

@@ -38,5 +38,6 @@ include("definition.jl")
 include("transfinite.jl")
 include("generate.jl")
 include("show.jl")
+include("helper.jl")
 
 end
