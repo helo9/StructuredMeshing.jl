@@ -21,3 +21,16 @@ function circlesection(coords1, coords2, center, u)
     
     return (x.(u), y.(u))
 end
+
+function boundaryfun(boundary::StraightBoundary, vertices, inverse_direction=false)
+    coords1 = vertices[boundary.vertice_start]
+    coords2 = vertices[boundary.vertice_end]
+    
+    connection = coords2 - coords1
+    
+    if inverse_direction
+        return coords2, u -> coords2 - connection .* u
+    else
+        return coords1, u -> coords1 + connection .* u
+    end
+end

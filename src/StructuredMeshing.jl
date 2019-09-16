@@ -32,6 +32,9 @@ export writeAbq
 ## visualisation
 export show
 
+## debugging
+export blockdef2fun2, blockdef2fun
+
 # include
 
 include("definition.jl")
