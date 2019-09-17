@@ -23,7 +23,7 @@ function show!(p::Plots.Plot, boundary::CircularBoundary, meshdef::MeshDef)
     x(α) = leg1[1] * cos(α) - leg1[2] * sin(α) + center[1]
     y(α) = leg1[1] * sin(α) + leg1[2] * cos(α) + center[2]
     
-    plot!(p, x, y, 0, γ, leg=false)
+    plot!(p, x, y, 0, γ, leg=false, linecolor="blue")
 end
 
 function show!(p::Plots.Plot, vertice::Vector{Float64})

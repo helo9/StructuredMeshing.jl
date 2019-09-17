@@ -129,8 +129,6 @@ function mesh(meshdefinition::MeshDef)
     # generate nodes on boundaries
     nodeMapping = meshBoundaries!(mesh, meshdefinition)
     
-    println(nodeMapping)
-    
     # generate blocks
     for (block_id, block) in enumerate(meshdefinition.blocks)                
         meshBlock!(mesh, block_id, meshdefinition, nodeMapping)
@@ -173,8 +171,6 @@ function blockdef2fun(mesh, block, bounds, nodeMapping)
     # extract blocks boundaries
     boundary_ids = block[:bounds]
     boundaries = bounds[abs.(boundary_ids)]
-
-    println(boundary_ids)
     
     # extract vertice coordinates
     firstvert(boundary_id) = boundary_id>0 ? bounds[boundary_id].vertice_start : bounds[-boundary_id].vertice_end

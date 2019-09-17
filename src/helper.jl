@@ -34,3 +34,23 @@ function boundaryfun(boundary::StraightBoundary, vertices, inverse_direction=fal
         return coords1, u -> coords1 + connection .* u
     end
 end
+
+function boundaryfun(boundary::CircularBoundary, vertices, inverse_direction=false)
+    coords1 = vertices[boundary.vertice_start]
+    coords2 = vertices[boundary.vertice_end]
+    
+    center = circlecenter(coords1, coords2, boundary.radius)
+    
+    leg1 = coords1 .- center
+    leg2 = coords2 .- center
+    
+    γ = angle(vec(leg1), vec(leg2))
+    
+    T(u) = [cos(u*γ) -sin(u*γ); sin(u*γ) cos(u*γ)]
+    
+    if inverse_direction
+        return coords2, u -> T(1-u) * leg1 + center
+    else
+        return coords1, u -> T(u) * leg1 + center
+    end
+end
