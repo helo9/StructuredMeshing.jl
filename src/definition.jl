@@ -153,7 +153,7 @@ end
 """
     transitionextrude(meshdef, boundlink, direction, layers)
 
-Generate Transition Mesh from extrusion of boundary
+Generate Transition Mesh from extrusion of boundary 
 """
 function transitionextrude!(meshdef::MeshDef, boundlink::BoundaryLink, direction::Vector{Float64}, layers::Int64)
     
@@ -188,8 +188,12 @@ function transitionextrude!(meshdef::MeshDef, boundlink::BoundaryLink, direction
     return blocklink    
 end
 
+"""
+    rotate!(meshdef, vert_star, center, angle, node_num)
 
-function rotate!(meshdef, vert_start::Int64, center, angle::Float64, node_num::Int64)
+Generate new boundary by the rotation of a vertice around center by angle.
+"""
+function rotate!(meshdef, vert_start::Integer, center, angle::Real, node_num::Integer)
     coords_start = meshdef.vertices[vert_start]
     
     leg = coords_start - center
@@ -214,8 +218,39 @@ function rotate!(meshdef, vert_start::Int64, center, angle::Float64, node_num::I
 end
 
 
-function rotate!(meshdef::MeshDef, boundary::BoundaryLink, center::Int64, angle::Float64; fill=false, node_num=Nothing)
-    # TODO implement
+"""
+    rotate(meshdef, boundary, center, angle, fill, node_num)
+
+Generate new block or boundary by rotation of block around center by angle.
+"""
+function rotate!(meshdef::MeshDef, boundary::BoundaryLink, center, angle::Real, node_num::Integer; fill=false)
+    boundlink1 = rotate!(meshdef, boundary.vert_start, center, angle, node_num)
+    boundlink2 = rotate!(meshdef, boundary.vert_end, center, angle, node_num)
+    
+    boundlink3 = rotate_!(meshdef, meshdef.bounds[boundary.id], boundlink1.vert_end, boundlink2.vert_end, center, angle)
+    
+    bounds = [boundlink1.id, boundlink3.id, -boundlink2.id, -boundary.id]
+    
+    blockdef = Dict(:type=>:transfinite, :bounds=>bounds)
+    
+    push!(meshdef.blocks, blockdef)
+    
+    block_id = size(meshdef.blocks, 1)
+    
+    BlockLink(block_id, boundlink3, boundlink1, boundlink2, 
+        boundlink1.vert_start, boundlink1.vert_end)
+    
+end
+
+function rotate_!(meshdef::MeshDef, boundary::StraightBoundary, vert_start, vert_end, center, anlge::Real)
+    
+    boundary = StraightBoundary(vert_start, vert_end, boundary.node_num)
+    
+    push!(meshdef.bounds, boundary)
+    
+    bound_id = size(meshdef.bounds, 1)
+    
+    return BoundaryLink(bound_id, vert_start, vert_end)
 end
 
 """
