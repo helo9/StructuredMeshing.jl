@@ -1,6 +1,6 @@
 using Formatting
 
-function writeAbq(filename::String, mesh::Mesh)
+function writeabq(filename::String, mesh::Mesh)
     # open file
     open(filename, "w") do afile
         # node header

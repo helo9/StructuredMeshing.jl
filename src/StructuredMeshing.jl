@@ -27,7 +27,7 @@ export emptyMeshDef, addVertex!, extrude!, transitionextrude!, defineCartesian, 
 export mesh
 
 ## abaqus export
-export writeAbq
+export writeabq
 
 ## visualisation
 export show
@@ -42,5 +42,6 @@ include("transfinite.jl")
 include("generate.jl")
 include("show.jl")
 include("helper.jl")
+include("abaqus.jl")
 
 end
