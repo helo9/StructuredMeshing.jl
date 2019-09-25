@@ -11,12 +11,14 @@ function writeabq(filename::String, mesh::Mesh)
             write(afile, format("{}, {}, {}\n", nodeid, nodecoords...))
         end
         
-        # element header
-        write(afile, "*Element, type=CPS4R\n")
-        
         # elements
-        for (elid, element) in enumerate(mesh.elements)
-            write(afile, format("{}, {}, {}, {}, {}\n", elid, element...))
+        for (elem_type, element_ids) in mesh.elementsets
+            # element header
+            write(afile, "*Element, type=$elem_type\n")
+            for element_id in element_ids
+                element = mesh.elements[element_id]
+                write(afile, format("{}, {}, {}, {}, {}\n", element_id, element...))
+            end
         end
     end
 end

@@ -1,15 +1,59 @@
 import Statistics: mean
+using DataStructures
 
 """
 Container for generated Mesh
 """
 mutable struct Mesh
-    nodes :: Vector{Vector{Float64}}
-    elements :: Vector{Vector{Int64}}
+    nodes :: Vector{Vector{Real}}
+    elements :: Vector{Vector{Integer}}
+    elementsets :: DefaultDict{String, Vector{Integer}, Vector{Integer}}
 end
 
 function emptyMesh()
-    Mesh(Vector{Float64}[], Vector{Int64}[])
+    Mesh(Vector{Float64}[], Vector{Int64}[], DefaultDict{String, Vector{Integer}}(Vector{Integer}()))
+end
+
+function translateNodes!(mesh::Mesh, node_ids::Vector{Int64}, translation::Vector{Float64}; copynodes::Bool=true)
+    if !copynodes
+        throw(DomainError())
+    end
+    
+    coords = Vector{Vector{Float64}}()
+        
+    for node_id in node_ids
+        push!(coords, mesh.nodes[node_id]+translation)
+    end
+            
+    node_ids_new = appendNodes!(mesh, coords)
+    
+    return node_ids_new
+end
+                
+function appendNodes!(mesh::Mesh, nodecoords::Vector{Vector{Float64}})
+    start_id = size(mesh.nodes, 1)+1
+    length = size(nodecoords, 1)
+    
+    append!(mesh.nodes, nodecoords)
+    
+    return collect(start_id:1:start_id+length-1)
+end
+
+function appendNodes!(mesh::Mesh, nodecoords::Array{Float64,2})
+    start_id = size(mesh.nodes, 1)+1
+    length = size(nodecoords, 1)
+
+    for i in range(1, stop=length, step=1)
+        push!(mesh.nodes, nodecoords[i,:])
+    end
+
+    return collect(start_id:1:start_id+length-1)
+end
+
+function appendElement!(mesh::Mesh, node_ids, elem_type)
+    el_id = size(push!(mesh.elements, node_ids), 1)
+    push!(mesh.elementsets[elem_type], el_id)
+    el_id
 end
 
 function getFac(boundary::AbstractBoundary; flipdirection::Bool=false)
@@ -126,6 +170,9 @@ function mesh(meshdefinition::MeshDef)
     # create an empty Mesh object
     mesh = emptyMesh()
     
+    # create element-set for default element type
+    mesh.elementsets[meshdefinition.default_elem_type]
+    
     # generate nodes on boundaries
     nodeMapping = meshBoundaries!(mesh, meshdefinition)
     
@@ -164,7 +211,7 @@ function meshBlock!(mesh::Mesh, block_id, meshdef, nodeMapping)
     else
         blocktype_str = string(block[:type])
         throw(UndefVarError("Not defined blocktype ($blocktype_str)"))
-    end          
+    end
 end
 
 function blockdef2fun(mesh, block, bounds, nodeMapping)
@@ -216,6 +263,8 @@ end
 
 function meshTransfiniteBlock2!(mesh::Mesh, block_id, meshdef, nodeMapping)
     
+    elem_type = meshdef.blocks[block_id][:elem_type]
+    
     function addElements!(mesh, last_node_ids, node_ids)
         for j in 2:size(node_ids,1)
             el_node1 = last_node_ids[j-1]
@@ -225,7 +274,7 @@ function meshTransfiniteBlock2!(mesh::Mesh, block_id, meshdef, nodeMapping)
 
             el_nodes = [el_node1, el_node2, el_node3, el_node4]
             
-            el_id = appendElement!(mesh, el_nodes)
+            el_id = appendElement!(mesh, el_nodes, elem_type)
         end
     end
 
@@ -283,7 +332,7 @@ function meshTransfiniteBlock2!(mesh::Mesh, block_id, meshdef, nodeMapping)
 
 end
     
-function meshTransitionUnit!(mesh::Mesh, nodes1::Vector{Int64}, nodes2::Vector{Int64}, left::Bool)
+function meshTransitionUnit!(mesh::Mesh, nodes1::Vector{Int64}, nodes2::Vector{Int64}, left::Bool, elem_type::String)
     cornerpoints_l = mesh.nodes[[nodes1[1], nodes1[3], nodes2[1], nodes2[2]]]
     cornerpoints = mesh.nodes[[nodes1[1], nodes1[end], nodes2[1], nodes2[end]]]
     cornerpoints_r = mesh.nodes[[nodes1[3], nodes1[end], nodes2[2], nodes2[end]]]
@@ -302,51 +351,13 @@ function meshTransitionUnit!(mesh::Mesh, nodes1::Vector{Int64}, nodes2::Vector{I
     n2 = nodes2
     c = center_ids
 
-    appendElement!(mesh, [n1[1], n1[2], c[1], n2[1]])
-    appendElement!(mesh, [n1[2], n1[3], c[2], c[1]])
-    appendElement!(mesh, [c[1], c[2], n2[2], n2[1]])
-    appendElement!(mesh, [n1[3], n1[4], c[3], c[2]])
-    appendElement!(mesh, [c[2], c[3], n2[3], n2[2]])
-    appendElement!(mesh, [n1[4], n1[5], n2[3], c[3]])
+    appendElement!(mesh, [n1[1], n1[2], c[1], n2[1]], elem_type)
+    appendElement!(mesh, [n1[2], n1[3], c[2], c[1]], elem_type)
+    appendElement!(mesh, [c[1], c[2], n2[2], n2[1]], elem_type)
+    appendElement!(mesh, [n1[3], n1[4], c[3], c[2]], elem_type)
+    appendElement!(mesh, [c[2], c[3], n2[3], n2[2]], elem_type)
+    appendElement!(mesh, [n1[4], n1[5], n2[3], c[3]], elem_type)
 end
                         
-function translateNodes!(mesh::Mesh, node_ids::Vector{Int64}, translation::Vector{Float64}; copynodes::Bool=true)
-    if !copynodes
-        throw(DomainError())
-    end
-    
-    coords = Vector{Vector{Float64}}()
-        
-    for node_id in node_ids
-        push!(coords, mesh.nodes[node_id]+translation)
-    end
-            
-    node_ids_new = appendNodes!(mesh, coords)
-    
-    return node_ids_new
-end
-                
-function appendNodes!(mesh::Mesh, nodecoords::Vector{Vector{Float64}})
-    start_id = size(mesh.nodes, 1)+1
-    length = size(nodecoords, 1)
-    
-    append!(mesh.nodes, nodecoords)
-    
-    return collect(start_id:1:start_id+length-1)
-end
 
-function appendNodes!(mesh::Mesh, nodecoords::Array{Float64,2})
-    start_id = size(mesh.nodes, 1)+1
-    length = size(nodecoords, 1)
-
-    for i in range(1, stop=length, step=1)
-        push!(mesh.nodes, nodecoords[i,:])
-    end
-
-    return collect(start_id:1:start_id+length-1)
-end
-
-function appendElement!(mesh::Mesh, node_ids)
-    push!(mesh.elements, node_ids)
-end
                 

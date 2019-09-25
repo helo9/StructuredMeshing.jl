@@ -34,15 +34,16 @@ struct MeshDef
     blocks :: Vector{Dict{Symbol, Any}}
     bounds :: Vector{AbstractBoundary}
     vertices :: Vector{Vector{Float64}}
+    default_elem_type :: String
 end
 
 
-function emptyMeshDef()
+function emptyMeshDef(default_elem_type="CPS4")
     blocks = Vector{Dict{Symbol,Any}}()
     bounds = Vector{AbstractBoundary}()
     vertices = Vector{Vector{Float64}}()
     
-    MeshDef(blocks, bounds, vertices)
+    MeshDef(blocks, bounds, vertices, "CPS4")
 end
 
 """
@@ -132,7 +133,7 @@ function extrude!(meshdef::MeshDef, boundlink::BoundaryLink, direction::Vector{F
     
     bounds = [boundlink.id, boundlink2.id, boundlink3.id, -boundlink1.id]
     
-    blockdef = Dict(:type=>blocktype, :bounds=>bounds)
+    blockdef = Dict(:type=>blocktype, :bounds=>bounds, :elem_type=>meshdef.default_elem_type)
     
     push!(meshdef.blocks, blockdef)
     
@@ -231,7 +232,7 @@ function rotate!(meshdef::MeshDef, boundary::BoundaryLink, center, angle::Real, 
     
     bounds = [boundlink1.id, boundlink3.id, -boundlink2.id, -boundary.id]
     
-    blockdef = Dict(:type=>:transfinite, :bounds=>bounds)
+    blockdef = Dict(:type=>:transfinite, :bounds=>bounds, :elem_type=>meshdef.default_elem_type)
     
     push!(meshdef.blocks, blockdef)
     
@@ -269,7 +270,7 @@ function defineCartesian(xmin::Float64, ymin::Float64, xmax::Float64, ymax::Floa
         bounds[i] = StraightBoundary(i, i%4+1, n)
     end
 
-    blocks = [Dict(:type=>:cartesian, :bounds=>[1,2,3,4])]
+    blocks = [Dict(:type=>:cartesian, :bounds=>[1,2,3,4], :elem_type=>"CPS4")]
         
     return MeshDef(blocks, bounds, vertices)
 end

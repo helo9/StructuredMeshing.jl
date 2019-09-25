@@ -30,7 +30,7 @@ function show!(p::Plots.Plot, vertice::Vector{Float64})
     scatter!(p, [vertice[1]], [vertice[2]], marker=(:circle, :red, 6))
 end
 
-function show!(p::Plots.Plot, element::Vector{Int64}, mesh::Mesh)
+function show!(p::Plots.Plot, element::Vector{Integer}, mesh::Mesh)
     start_node = mesh.nodes[element[1]]
     
     for node_id in element[2:end]
