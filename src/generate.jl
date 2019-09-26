@@ -7,11 +7,11 @@ Container for generated Mesh
 mutable struct Mesh
     nodes :: Vector{Vector{Real}}
     elements :: Vector{Vector{Integer}}
-    elementsets :: DefaultDict{String, Vector{Integer}, Vector{Integer}}
+    elementsets :: DefaultDict{String, Vector{Integer}}
 end
 
 function emptyMesh()
-    Mesh(Vector{Float64}[], Vector{Int64}[], DefaultDict{String, Vector{Integer}}(Vector{Integer}()))
+    Mesh(Vector{Float64}[], Vector{Int64}[], DefaultDict{String, Vector{Integer}}(() -> Vector{Integer}()))
 end
 
 function translateNodes!(mesh::Mesh, node_ids::Vector{Int64}, translation::Vector{Float64}; copynodes::Bool=true)
@@ -169,10 +169,7 @@ function mesh(meshdefinition::MeshDef)
     
     # create an empty Mesh object
     mesh = emptyMesh()
-    
-    # create element-set for default element type
-    mesh.elementsets[meshdefinition.default_elem_type]
-    
+        
     # generate nodes on boundaries
     nodeMapping = meshBoundaries!(mesh, meshdefinition)
     

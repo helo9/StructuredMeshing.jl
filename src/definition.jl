@@ -114,7 +114,7 @@ end
 Extrude boundary to build new block
 """
 function extrude!(meshdef::MeshDef, boundlink::BoundaryLink, direction::Vector{Float64}, length::Float64, node_num::Int64, bias::Float64=1.0;
-        blocktype::Symbol=:transfinite, parallel_node_num::Int64=0)
+        blocktype::Symbol=:transfinite, parallel_node_num::Int64=0, element_type::String="")
     
     bounds = Vector{Int64}()
     
@@ -133,7 +133,11 @@ function extrude!(meshdef::MeshDef, boundlink::BoundaryLink, direction::Vector{F
     
     bounds = [boundlink.id, boundlink2.id, boundlink3.id, -boundlink1.id]
     
-    blockdef = Dict(:type=>blocktype, :bounds=>bounds, :elem_type=>meshdef.default_elem_type)
+    if isempty(element_type)
+        element_type = meshdef.default_elem_type
+    end
+    
+    blockdef = Dict(:type=>blocktype, :bounds=>bounds, :elem_type=>element_type)
     
     push!(meshdef.blocks, blockdef)
     
@@ -156,7 +160,7 @@ end
 
 Generate Transition Mesh from extrusion of boundary 
 """
-function transitionextrude!(meshdef::MeshDef, boundlink::BoundaryLink, direction::Vector{Float64}, layers::Int64)
+function transitionextrude!(meshdef::MeshDef, boundlink::BoundaryLink, direction::Vector{Float64}, layers::Int64; element_type::String="")
     
     bound_start = meshdef.bounds[boundlink.id]
     
@@ -184,7 +188,7 @@ function transitionextrude!(meshdef::MeshDef, boundlink::BoundaryLink, direction
     
     # do extrusion
     blocklink = extrude!(meshdef, boundlink, vec, distance, layers+1, -0.5, blocktype=:transition,
-                        parallel_node_num = N)
+                        parallel_node_num = N, element_type=element_type)
     
     return blocklink    
 end
@@ -224,13 +228,17 @@ end
 
 Generate new block or boundary by rotation of block around center by angle.
 """
-function rotate!(meshdef::MeshDef, boundary::BoundaryLink, center, angle::Real, node_num::Integer; fill=false)
+function rotate!(meshdef::MeshDef, boundary::BoundaryLink, center, angle::Real, node_num::Integer; fill=false, element_type::String="")
     boundlink1 = rotate!(meshdef, boundary.vert_start, center, angle, node_num)
     boundlink2 = rotate!(meshdef, boundary.vert_end, center, angle, node_num)
     
     boundlink3 = rotate_!(meshdef, meshdef.bounds[boundary.id], boundlink1.vert_end, boundlink2.vert_end, center, angle)
     
     bounds = [boundlink1.id, boundlink3.id, -boundlink2.id, -boundary.id]
+    
+    if isempty(element_type)
+        element_tpye = meshdef.default_elem_type
+    end
     
     blockdef = Dict(:type=>:transfinite, :bounds=>bounds, :elem_type=>meshdef.default_elem_type)
     
